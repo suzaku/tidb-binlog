@@ -101,6 +101,35 @@ type request struct {
 	err          error
 }
 
+func (r *request) MarshalBinary() ([]byte, error) {
+	data := make([]byte, 24)
+	binary.LittleEndian.PutUint32(data, uint32(r.tp))
+	binary.LittleEndian.PutUint64(data[4:12], uint64(r.ts()))
+	vpData, err := r.valuePointer.MarshalBinary()
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+	copy(data[12:], vpData)
+	return data, nil
+}
+
+func (r *request) UnmarshalBinary(data []byte) error {
+	if len(data) != 24 {
+		return errors.New("Invalid data for request")
+	}
+	r.tp = pb.BinlogType(binary.LittleEndian.Uint32(data))
+	ts := int64(binary.LittleEndian.Uint64(data[4:]))
+	if r.tp == pb.BinlogType_Prewrite {
+		r.startTS = ts
+	} else {
+		r.commitTS = ts
+	}
+	if err := r.valuePointer.UnmarshalBinary(data[12:]); err != nil {
+		return errors.Trace(err)
+	}
+	return nil
+}
+
 func (r *request) ts() int64 {
 	if r.tp == pb.BinlogType_Prewrite {
 		return r.startTS

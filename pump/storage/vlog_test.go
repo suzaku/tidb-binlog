@@ -221,3 +221,48 @@ func (vps *ValuePointerSuite) TestValuePointerMarshalBinary(c *check.C) {
 
 	c.Assert(vp, check.Equals, expect)
 }
+
+type requestMarshalSuite struct{}
+
+var _ = check.Suite(&requestMarshalSuite{})
+
+func (s *requestMarshalSuite) TestMarshalStartTS(c *check.C) {
+	r := request{
+		tp: pb.BinlogType_Prewrite,
+		startTS: 408550873970507932,
+	}
+	data, err := r.MarshalBinary()
+	c.Assert(err, check.IsNil)
+	another := new(request)
+	err = another.UnmarshalBinary(data)
+	c.Assert(err, check.IsNil)
+	c.Assert(r.tp, check.Equals, another.tp)
+	c.Assert(r.startTS, check.Equals, another.startTS)
+}
+
+func (s *requestMarshalSuite) TestMarshalCommitTS(c *check.C) {
+	r := request{
+		tp: pb.BinlogType_Commit,
+		startTS: 909550873970507932,
+	}
+	data, err := r.MarshalBinary()
+	c.Assert(err, check.IsNil)
+	another := new(request)
+	err = another.UnmarshalBinary(data)
+	c.Assert(err, check.IsNil)
+	c.Assert(r.tp, check.Equals, another.tp)
+	c.Assert(r.commitTS, check.Equals, another.commitTS)
+}
+
+func (s *requestMarshalSuite) TestMarshalValuePointer(c *check.C) {
+	r := request{
+		tp: pb.BinlogType_Commit,
+		valuePointer: valuePointer{Fid: 32, Offset: 10255},
+	}
+	data, err := r.MarshalBinary()
+	c.Assert(err, check.IsNil)
+	another := new(request)
+	err = another.UnmarshalBinary(data)
+	c.Assert(err, check.IsNil)
+	c.Assert(r.valuePointer, check.DeepEquals, another.valuePointer)
+}
