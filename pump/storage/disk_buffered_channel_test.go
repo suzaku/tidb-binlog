@@ -102,7 +102,7 @@ func (s *diskBufferedChanSuite) TestReadFromDiskBuffers(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(bufPaths, HasLen, 1)
 
-	for i := 90; i < 90; i++ {
+	for i := 90; i < nReqs; i++ {
 		select {
 		case r := <-ch:
 			c.Assert(r.commitTS, Equals, int64(i))

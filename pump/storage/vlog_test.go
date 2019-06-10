@@ -91,6 +91,7 @@ func (vs *VlogSuit) TestSingleWriteRead(c *check.C) {
 }
 
 func (vs *VlogSuit) TestBatchWriteRead(c *check.C) {
+	c.Skip("slow")
 	testBatchWriteRead(c, 1, DefaultOptions())
 
 	testBatchWriteRead(c, 1024, DefaultOptions())
@@ -243,7 +244,7 @@ func (s *requestMarshalSuite) TestMarshalStartTS(c *check.C) {
 func (s *requestMarshalSuite) TestMarshalCommitTS(c *check.C) {
 	r := request{
 		tp: pb.BinlogType_Commit,
-		startTS: 909550873970507932,
+		commitTS: 909550873970507932,
 	}
 	data, err := r.MarshalBinary()
 	c.Assert(err, check.IsNil)
