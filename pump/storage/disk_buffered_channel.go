@@ -53,11 +53,7 @@ type diskBufferedChannel struct {
 	sync.Mutex
 }
 
-func newDiskBufferedChannel(c chan *request, dir string) (*diskBufferedChannel, error) {
-	// TODO: remove this check?
-	if cap(c) == 0 {
-		return nil, errors.New("only buffered channel is allowed")
-	}
+func newDiskBufferedChannel(c chan *request, dir string) *diskBufferedChannel {
 	dbc := diskBufferedChannel{
 		C:           c,
 		Dir:         dir,
@@ -66,7 +62,7 @@ func newDiskBufferedChannel(c chan *request, dir string) (*diskBufferedChannel, 
 
 	// TODO arrange quiting
 	go dbc.consumeDiskBuf()
-	return &dbc, nil
+	return &dbc
 }
 
 // put is not threadsafe, because to keep the order of requests,
@@ -140,7 +136,6 @@ func (c *diskBufferedChannel) writeToDiskBuf(batch []*request) error {
 func (c *diskBufferedChannel) consumeDiskBuf() {
 	pattern := filepath.Join(c.Dir, "*."+bufExt)
 	for {
-		// TODO: wait until nPendingBuf > 0
 		c.bufNotEmpty.L.Lock()
 		for c.nPendingBuf <= 0 {
 			c.bufNotEmpty.Wait()

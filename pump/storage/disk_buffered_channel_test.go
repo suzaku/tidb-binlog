@@ -28,8 +28,7 @@ var _ = Suite(&diskBufferedChanSuite{})
 func (s *diskBufferedChanSuite) TestUseChanDirectly(c *C) {
 	d := c.MkDir()
 	ch := make(chan *request, 10)
-	dbc, err := newDiskBufferedChannel(ch, d)
-	c.Assert(err, IsNil)
+	dbc := newDiskBufferedChannel(ch, d)
 	for i := 0; i < 5; i++ {
 		err := dbc.put(&request{commitTS: int64(i)})
 		c.Assert(err, IsNil)
@@ -40,8 +39,7 @@ func (s *diskBufferedChanSuite) TestUseChanDirectly(c *C) {
 func (s *diskBufferedChanSuite) TestCanPutMoreItemsThanChannelCap(c *C) {
 	d := c.MkDir()
 	ch := make(chan *request, 3)
-	dbc, err := newDiskBufferedChannel(ch, d)
-	c.Assert(err, IsNil)
+	dbc := newDiskBufferedChannel(ch, d)
 	nReqs := cap(ch) * 10
 	for i := 0; i < nReqs; i++ {
 		err := dbc.put(&request{commitTS: int64(i)})
@@ -69,12 +67,11 @@ func (s *diskBufferedChanSuite) TestReadFromDiskBuffers(c *C) {
 
 	d := c.MkDir()
 	ch := make(chan *request, 2)
-	dbc, err := newDiskBufferedChannel(ch, d)
-	c.Assert(err, IsNil)
+	dbc := newDiskBufferedChannel(ch, d)
 	nReqs := 100
 	for i := 0; i < nReqs; i++ {
 		err := dbc.put(&request{
-			tp: pb.BinlogType_Commit,
+			tp:       pb.BinlogType_Commit,
 			commitTS: int64(i),
 		})
 		c.Assert(err, IsNil)
