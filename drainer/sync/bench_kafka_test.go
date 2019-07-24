@@ -21,7 +21,6 @@ import (
 	ti "github.com/pingcap/tipb/go-binlog"
 )
 
-var bytes = make([]byte, 5*(1<<10))
 var table = &obinlog.Table{
 	SchemaName: proto.String("test"),
 	TableName:  proto.String("test"),
@@ -38,7 +37,7 @@ var table = &obinlog.Table{
 						Int64Value: proto.Int64(1),
 					},
 					{
-						BytesValue: bytes,
+						BytesValue: make([]byte, 5*(1<<10)),
 					},
 				},
 			},
