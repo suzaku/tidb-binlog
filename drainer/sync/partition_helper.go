@@ -141,3 +141,30 @@ func isPKValEqual(c1 *obinlog.Column, c2 *obinlog.Column) (bool, error) {
 		return false, errors.Errorf("Uncomparable columns: %+v, %+v", c1, c2)
 	}
 }
+
+func (r *Row) splitPKUpdate() []*Row {
+	mut := r.getMutation()
+	deleteMut := obinlog.TableMutation{
+		Type: obinlog.MutationType_Delete.Enum(),
+		Row:  mut.ChangeRow,
+	}
+	deleteRow := r.cloneWithNoMutation()
+	deleteRow.Mutations = []*obinlog.TableMutation{&deleteMut}
+	insertMut := obinlog.TableMutation{
+		Type: obinlog.MutationType_Insert.Enum(),
+		Row:  mut.Row,
+	}
+	insertRow := r.cloneWithNoMutation()
+	insertRow.Mutations = []*obinlog.TableMutation{&insertMut}
+
+	return []*Row{deleteRow, insertRow}
+}
+
+func (r *Row) cloneWithNoMutation() *Row {
+	tbl := obinlog.Table{
+		SchemaName: r.SchemaName,
+		TableName:  r.TableName,
+		ColumnInfo: r.ColumnInfo,
+	}
+	return &Row{&tbl}
+}
