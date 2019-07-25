@@ -14,6 +14,7 @@
 package sync
 
 import (
+	"github.com/gogo/protobuf/proto"
 	. "github.com/pingcap/check"
 	binlog "github.com/pingcap/tidb-tools/tidb-binlog/slave_binlog_proto/go-binlog"
 )
@@ -68,18 +69,17 @@ func (rs *rowSuite) TestIsPrimaryKeyUpdated(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(updated, IsFalse, Commentf("Not a update mutation"))
 
-	var oldID, newID int64 = 123, 4523
 	mut := tbl.Mutations[0]
 	mut.Type = binlog.MutationType_Update.Enum()
 	mut.ChangeRow = &binlog.Row{
 		Columns: []*binlog.Column{
-			{Int64Value: &oldID},
+			{Int64Value: proto.Int64(123)},
 			{},
 		},
 	}
 	mut.Row = &binlog.Row{
 		Columns: []*binlog.Column{
-			{Int64Value: &newID},
+			{Int64Value: proto.Int64(423423)},
 			{},
 		},
 	}
@@ -89,26 +89,37 @@ func (rs *rowSuite) TestIsPrimaryKeyUpdated(c *C) {
 }
 
 func (rs *rowSuite) TestIsPKValEqual(c *C) {
-	var x, y int64 = 4, 4
-	eq, err := isPKValEqual(&binlog.Column{Int64Value: &x}, &binlog.Column{Int64Value: &y})
+	eq, err := isPKValEqual(
+		&binlog.Column{Int64Value: proto.Int64(4)},
+		&binlog.Column{Int64Value: proto.Int64(4)},
+	)
 	c.Assert(err, IsNil)
 	c.Assert(eq, IsTrue)
-	y = 10
-	eq, err = isPKValEqual(&binlog.Column{Int64Value: &x}, &binlog.Column{Int64Value: &y})
+	eq, err = isPKValEqual(
+		&binlog.Column{Int64Value: proto.Int64(4)},
+		&binlog.Column{Int64Value: proto.Int64(10)},
+	)
 	c.Assert(err, IsNil)
 	c.Assert(eq, IsFalse)
 
-	var u, v uint64 = 10, 12
-	eq, err = isPKValEqual(&binlog.Column{Uint64Value: &u}, &binlog.Column{Uint64Value: &v})
+	eq, err = isPKValEqual(
+		&binlog.Column{Uint64Value: proto.Uint64(10)},
+		&binlog.Column{Uint64Value: proto.Uint64(12)},
+	)
 	c.Assert(err, IsNil)
 	c.Assert(eq, IsFalse)
 
-	var b1, b2 []byte = []byte("test"), []byte("test")
-	eq, err = isPKValEqual(&binlog.Column{BytesValue: b1}, &binlog.Column{BytesValue: b2})
+	eq, err = isPKValEqual(
+		&binlog.Column{BytesValue: []byte("test")},
+		&binlog.Column{BytesValue: []byte("test")},
+	)
 	c.Assert(err, IsNil)
 	c.Assert(eq, IsTrue)
 
-	_, err = isPKValEqual(&binlog.Column{BytesValue: b1}, &binlog.Column{Uint64Value: &v})
+	_, err = isPKValEqual(
+		&binlog.Column{BytesValue: []byte("sdf")},
+		&binlog.Column{Uint64Value: proto.Uint64(33)},
+	)
 	c.Assert(err, ErrorMatches, ".*Uncomparable columns.*")
 }
 
@@ -132,11 +143,10 @@ func (rs *rowSuite) TestHash(c *C) {
 	var hashes []uint32
 	fakeIDs := []int64{1983, 1984, 1985, 1986, 1987}
 	for _, id := range fakeIDs {
-		name := "Joestar"
 		tbl.Mutations[0].Row.Columns = []*binlog.Column{
 			{Int64Value: &id},
 			{},
-			{StringValue: &name},
+			{StringValue: proto.String("Joestar")},
 		}
 		h, err := row.Hash()
 		c.Assert(err, IsNil)
