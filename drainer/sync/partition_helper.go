@@ -78,10 +78,24 @@ func (r Row) IndexPrimaryKeys() []int {
 func (r Row) Hash() (uint32, error) {
 	// TODO: Check assumptions, eg. Only one row mutation; Has Primary Key
 	// TODO: Only use table name if the table has no primary key
-	mut := r.getMutation()
+	var keyBytes []byte
+	keyBytes = []byte(r.GetTableName())
+
+	pkData, err := r.encodePKValues()
+	if err != nil {
+		return 0, err
+	}
+	keyBytes = append(keyBytes, pkData...)
+	h := fnv.New32()
+	if _, err := h.Write(keyBytes); err != nil {
+		return 0, err
+	}
+	return h.Sum32(), nil
+}
+
+func (r *Row) encodePKValues() ([]byte, error) {
 	var b bytes.Buffer
-	b.WriteString(r.GetTableName())
-	cols := mut.Row.Columns
+	cols := r.getMutation().Row.Columns
 	pkIdx := r.IndexPrimaryKeys()
 	for _, i := range pkIdx {
 		colInfo := r.ColumnInfo[i]
@@ -106,15 +120,10 @@ func (r Row) Hash() (uint32, error) {
 			binary.LittleEndian.PutUint64(buf[:], col.GetUint64Value())
 			b.Write(buf[:])
 		} else {
-			return 0, errors.Errorf("Invalid primary key `%s`: %+v", colInfo.Name, col)
+			return nil, errors.Errorf("Invalid primary key `%s`: %+v", colInfo.Name, col)
 		}
 	}
-	h := fnv.New32()
-	_, err := h.Write(b.Bytes())
-	if err != nil {
-		return 0, err
-	}
-	return h.Sum32(), nil
+	return b.Bytes(), nil
 }
 
 func isPKValEqual(c1 *obinlog.Column, c2 *obinlog.Column) (bool, error) {
