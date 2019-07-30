@@ -143,7 +143,7 @@ func isPKValEqual(c1 *obinlog.Column, c2 *obinlog.Column) (bool, error) {
 	}
 }
 
-func (r *Row) splitPKUpdate() []*Row {
+func (r *Row) splitPKUpdate() (delete, insert *Row) {
 	mut := r.getMutation()
 	deleteMut := obinlog.TableMutation{
 		Type: obinlog.MutationType_Delete.Enum(),
@@ -158,7 +158,7 @@ func (r *Row) splitPKUpdate() []*Row {
 	insertRow := r.cloneWithNoMutation()
 	insertRow.Mutations = []*obinlog.TableMutation{&insertMut}
 
-	return []*Row{deleteRow, insertRow}
+	return deleteRow, insertRow
 }
 
 func (r *Row) cloneWithNoMutation() *Row {

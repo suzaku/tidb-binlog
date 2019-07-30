@@ -159,3 +159,26 @@ func (rs *rowSuite) TestHash(c *C) {
 	}
 	c.Assert(len(set), Equals, len(hashes))
 }
+
+func (rs *rowSuite) TestSplitPKUpdate(c *C) {
+	tblName := "test_user"
+	tbl := binlog.Table{
+		TableName: &tblName,
+		ColumnInfo: []*binlog.ColumnInfo{
+			{Name: "id", IsPrimaryKey: true},
+			{Name: "name"},
+		},
+		Mutations: []*binlog.TableMutation{
+			{
+				Type:      binlog.MutationType_Update.Enum(),
+				Row:       &binlog.Row{},
+				ChangeRow: &binlog.Row{},
+			},
+		},
+	}
+	row := Row{&tbl}
+
+	rDelete, rInsert := row.splitPKUpdate()
+	c.Assert(rDelete.Mutations[0].GetType(), Equals, binlog.MutationType_Delete)
+	c.Assert(rInsert.Mutations[0].GetType(), Equals, binlog.MutationType_Insert)
+}
