@@ -77,15 +77,16 @@ func (r Row) IndexPrimaryKeys() []int {
 
 func (r Row) Hash() (uint32, error) {
 	// TODO: Check assumptions, eg. Only one row mutation; Has Primary Key
-	// TODO: Only use table name if the table has no primary key
-	var keyBytes []byte
-	keyBytes = []byte(r.GetTableName())
+	keyBytes := []byte(r.GetSchemaName() + r.GetTableName())
 
-	pkData, err := r.encodePKValues()
-	if err != nil {
-		return 0, err
+	if r.HasPrimaryKey() {
+		pkData, err := r.encodePKValues()
+		if err != nil {
+			return 0, err
+		}
+		keyBytes = append(keyBytes, pkData...)
 	}
-	keyBytes = append(keyBytes, pkData...)
+
 	h := fnv.New32()
 	if _, err := h.Write(keyBytes); err != nil {
 		return 0, err
