@@ -75,16 +75,24 @@ func (r Row) IndexPrimaryKeys() []int {
 	return index
 }
 
-func (r Row) Hash() (uint32, error) {
-	// TODO: Check assumptions, eg. Only one row mutation; Has Primary Key
+func (r Row) Encode() ([]byte, error) {
 	keyBytes := []byte(r.GetSchemaName() + r.GetTableName())
 
 	if r.HasPrimaryKey() {
 		pkData, err := r.encodePKValues()
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
 		keyBytes = append(keyBytes, pkData...)
+	}
+	return keyBytes, nil
+}
+
+func (r Row) Hash() (uint32, error) {
+	// TODO: Check assumptions, eg. Only one row mutation; Has Primary Key
+	keyBytes, err := r.Encode()
+	if err != nil {
+		return 0, err
 	}
 
 	h := fnv.New32()
