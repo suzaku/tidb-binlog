@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
+
 	"golang.org/x/net/context"
 
 	"github.com/ngaut/log"
@@ -485,7 +487,7 @@ func (s *Syncer) run(jobs []*model.Job) error {
 
 			err = s.translateSqls(preWrite.GetMutations(), commitTS, b.nodeID)
 			if err != nil {
-				return errors.Trace(err)
+				return errors.Annotatef(err, "translate binlog %d", b.GetCommitTs())
 			}
 		} else if jobID > 0 {
 			log.Debug("get ddl binlog job: ", b.job)
@@ -540,6 +542,9 @@ func (s *Syncer) translateSqls(mutations []pb.TableMutation, commitTS int64, nod
 		table, ok := s.schema.TableByID(mutation.GetTableId())
 		if !ok {
 			return errors.Errorf("not found table id: %d", mutation.GetTableId())
+		}
+		if tblJSON, err := json.Marshal(table); err == nil {
+			log.Info("Get table", zap.String("table", string(tblJSON)))
 		}
 
 		schemaName, tableName, ok := s.schema.SchemaAndTableName(mutation.GetTableId())
