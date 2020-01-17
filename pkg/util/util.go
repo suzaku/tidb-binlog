@@ -280,3 +280,12 @@ func AdjustDuration(v *time.Duration, defValue time.Duration) {
 		*v = defValue
 	}
 }
+
+// ToColumnMap return a map index by column id
+func ToColumnMap(columns []*model.ColumnInfo) map[int64]*model.ColumnInfo {
+	colMap := make(map[int64]*model.ColumnInfo, len(columns))
+	for _, col := range columns {
+		colMap[col.ID] = col
+	}
+	return colMap
+}
